@@ -1,0 +1,62 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// PUBLIC SCHEMA - Platform Level
+// ========================================
+
+model Tenant {
+  id            Int       @id @default(autoincrement())
+  storeName     String    @map("store_name") @db.VarChar(255)
+  ownerEmail    String    @unique @map("owner_email") @db.VarChar(255)
+  schemaName    String    @unique @map("schema_name") @db.VarChar(100)
+  status        String    @default("trial") @db.VarChar(50) // active, trial, suspended, expired, deleted
+  trialEndsAt   DateTime? @map("trial_ends_at")
+  notes         String?   @db.Text
+  createdAt     DateTime  @default(now()) @map("created_at")
+  
+  announcements Announcement[]
+
+  @@map("tenants")
+}
+
+model SuperAdmin {
+  id        Int      @id @default(autoincrement())
+  fullName  String   @map("full_name") @db.VarChar(255)
+  email     String   @unique @db.VarChar(255)
+  password  String   @db.VarChar(255)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("super_admins")
+}
+
+model Announcement {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int?     @map("tenant_id") // null = all stores
+  title     String   @db.VarChar(255)
+  message   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id])
+
+  @@map("announcements")
+}
+
+// ========================================
+// PER-STORE SCHEMA TABLES
+// These tables are created in each store_{id} schema
+// Below models are templates - actual tables live in tenant schemas
+// ========================================
+
+// Note: These models cannot be used directly with Prisma Client
+// They serve as documentation for the per-tenant schema structure
+// Actual queries use raw SQL with search_path set to store_{id}

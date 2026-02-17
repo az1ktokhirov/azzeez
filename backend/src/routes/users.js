@@ -84,8 +84,11 @@ router.put(
     try {
       const { fullName, email, role, branchId, password } = req.body;
 
+      // Convert branchId to integer if it exists
+      const branchIdInt = branchId ? parseInt(branchId, 10) : null;
+
       let query = `UPDATE users SET full_name = $1, email = $2, role = $3, branch_id = $4`;
-      const params = [fullName, email, role, branchId];
+      const params = [fullName, email, role, branchIdInt];
 
       if (password) {
         const hashedPassword = await hashPassword(password);
